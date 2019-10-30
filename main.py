@@ -10,7 +10,6 @@ if os.path.exists("utility_matrix.pickle"):
   print("Using already created utility_matrix.pickle file")
   print(utility_matrix.shape)
   # print(utility_matrix)
-  svd_cal = SVD(utility_matrix)
   
 
 else:
