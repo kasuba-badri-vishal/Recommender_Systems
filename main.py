@@ -1,4 +1,5 @@
 from svd import SVD
+from collaborative import Collaborative
 
 import pandas as pd
 import os
@@ -9,7 +10,16 @@ if os.path.exists("utility_matrix.pickle"):
   utility_matrix = pd.read_pickle("utility_matrix.pickle")
   print("Using already created utility_matrix.pickle file")
   print(utility_matrix.shape)
-  # print(utility_matrix)
+
+  colab = Collaborative(utility_matrix)
+  similarity_matrix = colab.get_normalized_cosine_similarity()
+  print("Calculated Similarity Matrix")
+  print("Take Input of user ID and Movie ID to predict the Rating")
+  query_user = int(input("Query User ID : "))
+  query_movie = int(input("Query Movie ID : "))
+  n = 20
+  predicted_rating = colab.get_rating(query_user,query_movie,similarity_matrix,n)
+  print("Predicted Rating : ",predicted_rating)
   
 
 else:
