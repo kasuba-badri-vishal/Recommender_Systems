@@ -1,8 +1,9 @@
 import time
 import numpy as np
 
-def get_svd(M, energy=0.9):
-	"""performs singular valu decomposition
+def get_svd(M, energy=1):
+	"""
+	Performs singular value decomposition
 
     Parameters
     ----------
@@ -14,24 +15,50 @@ def get_svd(M, energy=0.9):
     
     Returns
     -------
-    U numpy.ndarray, sigma numpy.ndarray, VT numpy.ndarray
+    U numpy.ndarray, sigma numpy.ndarray, V.T numpy.ndarray
         U is the left singular matrix
 		sigma is a diagonal matrix
-		VT is the right singular matrix
+		V.T is the right singular matrix
     """
 
 	m = M.shape[0]
 	n = M.shape[1]
 	# shape of MMT = m x m
 	MMT = np.matmul(M, M.T)
-	# shape of MMT = n x n
+	# shape of MTM = n x n
 	MTM = np.matmul(M.T, M)
-	_, U = np.linalg.eig(MMT)
-	eigenvals, V = np.linalg.eig(MTM)
-	sigma = np.zeros(shape = (m, n))
+	eigenvals_u, U = np.linalg.eigh(MMT)
+	eigenvals, V = np.linalg.eigh(MTM)
+	U1 = U.copy()
+	V1 = U.copy()
+
 	for i in range(eigenvals.shape[0]):
-		temp = 0 if eigenvals[i]<1e-10 else eigenvals[i]
-		sigma[i][i] = np.sqrt(temp)
+		eigenvals[i] = 0 if eigenvals[i]<1e-6 else eigenvals[i]
+
+	num_eig = eigenvals.shape[0]
+	eigenvals = eigenvals[::-1]
+
+	sigma = np.zeros((max(num_eig, U.shape[1]), max(num_eig, V.shape[1])))
+	sigma[:num_eig][:num_eig] = np.diag(np.sqrt(eigenvals))
+	sigma = sigma[:U.shape[1], :V.shape[1]]
+
+	# arranging eigen vectors in decreasing order
+	U = U[:, ::-1]
+	V = V[:, ::-1]
+
+	# print(U.shape, sigma.shape, V.shape)
+	print("error before reduction: ", np.linalg.norm(M-U@sigma@(V.T)))
+	
+	i = 0
+	while i<min(sigma.shape[0],sigma.shape[1]):
+		# removing columns from U and rows from sigma
+		if sigma[i][i]==0:
+			U = np.delete(U, i, 1)
+			V = np.delete(V, i, 1)
+			sigma = np.delete(sigma, i, 0)
+			sigma = np.delete(sigma, i, 1)
+			i-=1
+		i+=1
 
 	cur_energy = 0
 	tot_energy = sum(eigenvals)
@@ -42,14 +69,25 @@ def get_svd(M, energy=0.9):
 		if (cur_energy/tot_energy)>=energy:
 			num = i
 			break
-
-	for i in range(m-1, num, -1):
-		# removing columns from U and rows from sigma
-		U = np.delete(U, i, 1)
-		sigma = np.delete(sigma, i, 0)
-	for i in range(n-1, num, -1):
-		# removing columns from V and sigma
-		V = np.delete(V, i, 1)
-		sigma = np.delete(sigma, i, 1)
+	U = U[:,:num+1]
+	V = V[:,:num+1]
+	sigma = sigma[:num+1, :num+1]
+	# print(U.shape,sigma.shape, V.shape)
+	print("error after reduction: ", np.linalg.norm(M-U@sigma@(V.T)))
 
 	return U,sigma,V.T
+
+def get_query_(query, df):
+	U,sigma,VT = get_svd(df)
+	return (query @ sigma)
+
+def libsvd(M):
+	'''
+	SVD using numpy library function.
+	'''
+	U,d,VT = np.linalg.svd(M)
+	s = np.zeros((U.shape[1], VT.shape[0]))
+	s[:d.shape[0],:d.shape[0]] = np.diag(d)
+	print(U.shape, s.shape, VT.shape)
+	print("error: ", np.linalg.norm(M-U@s@VT))
+	return U,s,VT
