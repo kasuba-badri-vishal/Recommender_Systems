@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import random
 
-from svd import get_svd
+from svd import get_svd, libsvd
 
 
 def get_rand_selection(M, r):
@@ -66,7 +66,7 @@ def moore_penrose_psuedoinverse(E):
     return E_plus.transpose()
 
 
-def get_cur(M, energy=1):
+def get_cur(M, r=5, energy=1):
     """This function performs CUR decomposition on the input matrix
 
     Parameters
@@ -82,12 +82,13 @@ def get_cur(M, energy=1):
         tuple containing CUR decompostion matrices
     """
 
-    r = 2 # TODO: think about this later
+    if r>min(M.shape):
+        raise Exception(f"R value exceeds min of matrix shape: {M.shape}")
 
     rows, cols, row_prob, col_prob = get_rand_selection(M, r)
     # DEBUG: to set custom rows and cols if required(Debugging)
-    # rows = [3,1]
-    # cols = [1,0]
+    # rows = [5,5,3,3]
+    # cols = [0,3,3]
 
     # check for repeated rows and cols
     row_count = dict()
@@ -123,22 +124,24 @@ def get_cur(M, energy=1):
 
     ###### Using numpy for svd #####
     # comment this whole section to remove numpy svd
-    X, s, Y_t = np.linalg.svd(W)
-    E = np.zeros((X.shape[1], Y_t.shape[0])).astype(np.float)
-    E[:s.shape[0], :s.shape[0]] = np.diag(s)
+    X, E, Y_t = libsvd(W)
+    # X, s, Y_t = np.linalg.svd(W)
+    # E = np.zeros((X.shape[1], Y_t.shape[0])).astype(np.float)
+    # E[:s.shape[0], :s.shape[0]] = np.diag(s)
     ###### end of numpy for svd ####
 
     E_plus = moore_penrose_psuedoinverse(E)
     Y = Y_t.transpose()
     U = Y.dot(E_plus**2).dot(X.transpose())
 
-    print("Original: \n", M, end='\n\n')
-    print("Cols:", cols, end='\n')
-    print("Rows:", rows, end='\n\n')
-    # print(row_prob)
-    # print(col_prob)
-    print("C:\n", C, end='\n\n')
-    print("U:\n", U, end='\n\n')
-    print("R:\n", R, end='\n\n')
-    print("CUR:\n", C@U@R, end='\n\n')
-    print("Error:\n", C@U@R - M.values, end='\n\n')
+    # print("Original: \n", M, end='\n\n')
+    # print("Cols:", cols, end='\n')
+    # print("Rows:", rows, end='\n\n')
+    # print("Row Prob:\n", row_prob)
+    # print("Col Prob:\n", col_prob)
+    # print("C:\n", C, end='\n\n')
+    # print("U:\n", U, end='\n\n')
+    # print("R:\n", R, end='\n\n')
+    # print("CUR:\n", C@U@R, end='\n\n')
+    # print("Error:\n", C@U@R - M.values, end='\n\n')
+    return C, U, R
