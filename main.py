@@ -1,25 +1,33 @@
-from svd import SVD
+# from svd import SVD
 from collaborative import Collaborative
+from baseline import Baseline
 
 import pandas as pd
 import os
 import time
 
+
 utility_matrix = None
 if os.path.exists("utility_matrix.pickle"):
+  
   utility_matrix = pd.read_pickle("utility_matrix.pickle")
   print("Using already created utility_matrix.pickle file")
-  print(utility_matrix.shape)
-
+  # print(utility_matrix)
   colab = Collaborative(utility_matrix)
   similarity_matrix = colab.get_normalized_cosine_similarity()
-  print("Calculated Similarity Matrix")
-  print("Take Input of user ID and Movie ID to predict the Rating")
+  # print("Calculated Similarity Matrix")
+  # print("Take Input of user ID and Movie ID to predict the Rating")
   query_user = int(input("Query User ID : "))
   query_movie = int(input("Query Movie ID : "))
   n = 20
-  predicted_rating = colab.get_rating(query_user,query_movie,similarity_matrix,n)
-  print("Predicted Rating : ",predicted_rating)
+  # predicted_rating = colab.get_rating(query_user,query_movie,similarity_matrix,n)
+  # print("Predicted Rating : ",predicted_rating)
+  baseline = Baseline(utility_matrix)
+  user_rating = baseline.get_avg_user_rating()
+  movie_rating = baseline.get_avg_movie_rating()
+  baseline_matrix = baseline.get_rating_deviation(user_rating,movie_rating)
+  predicted_rating = baseline.get_baseline_rating_prediction(query_user,query_movie,similarity_matrix,baseline_matrix,n)
+  print("Predicted Rating using baseline approach : ",predicted_rating)
   
 
 else:
@@ -30,7 +38,6 @@ else:
 
 
   utility_matrix = pd.DataFrame(index=users["UserID"],columns=movies["MovieID"])
-  # utility_matrix = utility_matrix.fillna()
   for i in ratings.index:
     utility_matrix.at[ratings.at[i,"UserID"],ratings.at[i,"MovieID"]] = ratings.at[i,"Rating"]
   
