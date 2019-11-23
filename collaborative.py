@@ -5,32 +5,6 @@ import os
 import time
 import warnings
 
-#  print(self.utility_matrix.iloc[query_user,query_movie])
-#     if self.utility_matrix.iloc[query_user,query_movie] is not np.nan:
-#       print(self.utility_matrix.iloc[query_user,])
-#       self.utility_matrix[query_user,].fillna(0,inplace=True)
-#       print(self.utility_matrix.iloc[query_user,])
-#       # print(self.utility_matrix)
-#       movies_rated_by_user = np.argpartition(self.utility_matrix.iloc[query_user,],1*40)[40:]
-#       movies_rated_by_user = movies_rated_by_user.index.values.tolist()
-#       for i in movies_rated_by_user:
-#         print(self.utility_matrix.at[query_user,i])
-      # movies_rated_by_user = movies_rated_by_user.tolist()
-      # print(movies_rated_by_user)
-      # sim_movies = []
-      
-
-      # indices = np.argpartition(sim_matrix[query_movie],-1*N)[-1*N:] 
-      # sum = np.sum(sim_matrix[query_movie][indices])
-      # print(sum)
-      # val = 0
-      # indices = indices.tolist()
-      # for i in indices:
-      #   print(sim_matrix[query_movie][i])
-      # print(indices)
-      # for i in indices:
-      #   val += sim_matrix.at[query_movie,i]*(self.utility_matrix.at[query_user,i])
-      # predicted_rating = val/sum; 
 
 class Collaborative:
 
