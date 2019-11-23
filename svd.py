@@ -97,8 +97,8 @@ def libsvd(M, energy=1):
 		VT = V.T
 	print(U.shape, s.shape, VT.shape)
 	reconstr = U@s@VT
-	print("Mean Squared error: ", np.linalg.norm(M-reconstr)/(M.shape[0]*M.shape[1]))
-	print("Mean Average error: ", np.linalg.norm(M-reconstr, 1)/(M.shape[0]*M.shape[1]))
+	print("SVD Mean Squared error: ", np.linalg.norm(M-reconstr)/(M.shape[0]*M.shape[1]))
+	print("SVD Mean Average error: ", np.linalg.norm(M-reconstr, 1)/(M.shape[0]*M.shape[1]))
 	return U, s, VT
 
 def get_new_ratings(userRatings, decomp):
@@ -106,9 +106,7 @@ def get_new_ratings(userRatings, decomp):
 	This function, when given ratings of new users
 	atleast one movie, gives ratings for other movies.
 	'''
-
 	# U, sigma, VT = libsvd(M, energy)
-	
 	V = decomp[2].T
 	res = userRatings @ V @ V.T
 	return res
@@ -118,12 +116,11 @@ if __name__=='__main__':
 	utility_matrix = pd.read_pickle("utility_matrix.pickle").fillna(0)
 	print("got pickle in ", time.time() - starttime)
 
-	
 	starttime = time.time()
-	decomp = libsvd(utility_matrix.values)
+	decomp = libsvd(utility_matrix.values, 0.9)
 	print("got svd in ", time.time() - starttime)
 
 	starttime = time.time()
-	get_new_ratings = (utility_matrix.values, decomp)
+	newRatings = get_new_ratings(utility_matrix.values, decomp)
 	print("got prediction in ", time.time() - starttime)
 	
