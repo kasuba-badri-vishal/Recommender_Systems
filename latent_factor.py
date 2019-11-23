@@ -1,5 +1,6 @@
 from svd import *
 import time
+from main import load_sparse_pickle
 
 def gradient_descent(M, p, q, alpha, lmbda, max_iter=100):
     '''
@@ -12,22 +13,23 @@ def gradient_descent(M, p, q, alpha, lmbda, max_iter=100):
         E = M - (p@q)
         q = q + alpha * (p.T @ E - lmbda*q)
         p = p + alpha * (E @ q.T - lmbda*p)
-        error = np.linalg.norm(E)/(M.shape[0]*M.shape[1])
-        cost_arr.append(error)
+        error = np.square(E).sum()/(M.shape[0]*M.shape[1])
+        cost_arr.append(np.sqrt(error))
         print(f"iter={iterat}  error={error}")
     return (cost_arr,p, q)
 
 if __name__=='__main__':
     # loading utility matrix from pickle file
     starttime = time.time()
-    utility_matrix = pd.read_pickle("utility_matrix.pickle").fillna(0)
-    print("got pickle in ", time.time() - starttime)
+    # utility_matrix = pd.read_pickle("utility_matrix.pickle").fillna(0)
+    utility_matrix = load_sparse_pickle().fillna(0)
+    print("got pickle in  ", time.time() - starttime)
 
     m = utility_matrix.shape[0]
     n = utility_matrix.shape[1]
 
     # number of latent factors
-    r = 1000
+    r = 2000
     p = np.random.randn(m, r)
     q = np.random.randn(r, n)
     print("started gradient descent")
@@ -37,11 +39,13 @@ if __name__=='__main__':
 
     M = utility_matrix.values
     reconstr = p@q
-    print("Mean Squared error: ", np.linalg.norm(M-reconstr)/(M.shape[0]*M.shape[1]))
-    print("Mean Average error: ", np.linalg.norm(M-reconstr, 1)/(M.shape[0]*M.shape[1]))
-    np.linalg.norm(M - p@q)
+    print("Root Mean Squared error: ", np.sqrt(np.square(M-reconstr).sum()/(M.shape[0]*M.shape[1])))
+    print("Mean Average error: ", np.abs(M-reconstr).sum()/(M.shape[0]*M.shape[1]))
+
+    num = 60
     import matplotlib.pyplot as plt
-    plt.title("mse vs iteration plot")
+    plt.title("rmse vs iteration plot")
     plt.xlabel("iterations")
-    plt.ylabel("reconstruction mse")
-    plt.plot(cost_arr[:60])
+    plt.ylabel("reconstruction rmse")
+    plt.plot(cost_arr[:num])
+    plt.savefig(f"./temp/latent_{r}_{num}.png")
