@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import pandas as pd
+from main import load_sparse_pickle
 
 def get_svd(M, energy=1):
 	"""
@@ -51,7 +52,7 @@ def get_svd(M, energy=1):
 		U,sigma,V = reduce_dim(U, sigma, V, eigenvals, energy)
 
 	print(U.shape,sigma.shape, V.shape)
-	print("error after reduction: ", np.linalg.norm(M-U@sigma@(V.T)))
+	print("error after reduction: ", np.square(M-U@sigma@(V.T)).sum())
 
 	return U,sigma,V.T
 
@@ -97,8 +98,8 @@ def libsvd(M, energy=1):
 		VT = V.T
 	print(U.shape, s.shape, VT.shape)
 	reconstr = U@s@VT
-	print("SVD Mean Squared error: ", np.linalg.norm(M-reconstr)/(M.shape[0]*M.shape[1]))
-	print("SVD Mean Average error: ", np.linalg.norm(M-reconstr, 1)/(M.shape[0]*M.shape[1]))
+	print("SVD Mean Squared error: ", np.square(M-reconstr).sum()/(M.shape[0]*M.shape[1]))
+	print("SVD Mean Average error: ", abs(M-reconstr).sum()/(M.shape[0]*M.shape[1]))
 	return U, s, VT
 
 def get_new_ratings(userRatings, decomp):
@@ -113,7 +114,8 @@ def get_new_ratings(userRatings, decomp):
 
 if __name__=='__main__':
 	starttime = time.time()
-	utility_matrix = pd.read_pickle("utility_matrix.pickle").fillna(0)
+	# utility_matrix = pd.read_pickle("utility_matrix.pickle").fillna(0)
+	utility_matrix = load_sparse_pickle().fillna(0)
 	print("got pickle in ", time.time() - starttime)
 
 	starttime = time.time()
