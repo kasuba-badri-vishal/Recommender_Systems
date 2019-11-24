@@ -34,13 +34,13 @@ def get_rand_selection(M, r):
 
     # find probability of each row being selected using the frobenius norm
     # row_prob: list of probabilites for each row -> row_prob[i]: prob of ith row
-    row_prob = [ (M.loc[i,:]**2).sum()/f for i in range(M.shape[0]) ]
+    row_prob = { i:(M.loc[i,:]**2).sum()/f for i in M.index }
     # col_prob: list of probabilites for each col -> col_prob[i]: prob of ith col
-    col_prob = [ (M[i]**2).sum()/f for i in range(M.shape[1]) ]
+    col_prob = { i:(M[i]**2).sum()/f for i in M.columns }
 
     # return [np.random.randint(0, M.shape[0]) for i in range(r)] # just randomly return rows irrespective of prob_dist
-    return (random.choices([i for i in range(M.shape[0])], row_prob, k=r), 
-            random.choices([i for i in range(M.shape[1])], col_prob, k=r),
+    return (random.choices([i for i in M.index], row_prob, k=r), 
+            random.choices([i for i in M.columns], col_prob, k=r),
             row_prob,
             col_prob )
 
@@ -61,8 +61,9 @@ def moore_penrose_psuedoinverse(E):
 
     E_plus = E.copy()
     for i in range(min(E_plus.shape[0], E_plus.shape[1])):
-        if E_plus[i][i] != 0:
+        if E_plus[i][i] > 1e-6 :    # actually should be != 0
             E_plus[i][i] = (1/E_plus[i][i])
+        else: E_plus[i][i] = 0
     return E_plus.transpose()
 
 
@@ -106,16 +107,16 @@ def get_cur(M, r=5, energy=1):
     # get selected rows/cols
     # divide with their prob of selection to normalize
     # if multiple same k no of rows are selected, then multiply the row by sqrt(k)
-    C = M.filter(cols, axis=1).copy().astype(np.float)
+    C = M.filter(cols, axis=1).copy().astype(np.float).fillna(0)
     for j in C.columns:
         C.loc[:,j] = ( C.loc[:,j]/( (r*col_prob[j])**0.5 ) ) * (col_count[j]**0.5)
-    
-    R = M.filter(rows, axis=0).copy().astype(np.float)
+    energy -= 0.1
+    R = M.filter(rows, axis=0).copy().astype(np.float).fillna(0)
     for i in R.index:
         R.loc[i] = ( R.loc[i]/((r*row_prob[i])**0.5) ) * (row_count[i]**0.5)
-
-    C = C.values    # convert to numpy array
-    R = R.values    # convert to numpy array
+        
+    C = np.nan_to_num(C.values)    # convert to numpy array
+    R = np.nan_to_num(R.values)    # convert to numpy array
 
     W = M.filter(rows, axis=0).filter(cols, axis=1)
 
@@ -124,7 +125,7 @@ def get_cur(M, r=5, energy=1):
 
     ###### Using numpy for svd #####
     # comment this whole section to remove numpy svd
-    X, E, Y_t = libsvd(W)
+    X, E, Y_t = libsvd(W, energy)
     # X, s, Y_t = np.linalg.svd(W)
     # E = np.zeros((X.shape[1], Y_t.shape[0])).astype(np.float)
     # E[:s.shape[0], :s.shape[0]] = np.diag(s)
@@ -133,6 +134,7 @@ def get_cur(M, r=5, energy=1):
     E_plus = moore_penrose_psuedoinverse(E)
     Y = Y_t.transpose()
     U = Y.dot(E_plus**2).dot(X.transpose())
+    # U = Y@np.square(E_plus)@X.transpose()
 
     # print("Original: \n", M, end='\n\n')
     # print("Cols:", cols, end='\n')
